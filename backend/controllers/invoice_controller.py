@@ -5,6 +5,7 @@ from services.vector_db_service import store_embedding_data, search_similar_data
 import asyncio
 import os
 import tempfile
+import traceback
 
 # Agents
 from agents.invoice_agent import invoice_agent
@@ -41,18 +42,23 @@ def deduplicate_similar_results(results):
 
 @router.post("/process-invoice")
 async def process_invoice(file: UploadFile = File(...)):
-    if file.content_type != "application/pdf" or not file.filename.endswith(".pdf"):
+ try:
+     print("Recieved file:", file.filename)   
+     if file.content_type != "application/pdf" or not file.filename.endswith(".pdf"):
         return {"error": "Only PDF files are allowed"}
 
-    contents = await file.read()
+     contents = await file.read()
 
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
+     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
         temp_file.write(contents)
         temp_file_path = temp_file.name
 
-    try:
+     try:
+        print("Extracting text")
         text = extract_text(temp_file_path)
+        print("Extracted text length:", len(text))
 
+        print("Running agents")
         results = await asyncio.gather(
             invoice_agent(text),
             po_agent(text),
@@ -100,9 +106,12 @@ async def process_invoice(file: UploadFile = File(...)):
             ]
         }
 
-    finally:
+     finally:
         if os.path.exists(temp_file_path):
             os.remove(temp_file_path)
+ except Exception as e:
+    print("Error Occurred")
+    traceback.print_exc()            
 
 
 @router.get("/invoices")
