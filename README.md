@@ -230,7 +230,7 @@ pip install -r requirements.txt
 ---
 
 ## 📸 Screenshots
-![alt text](<Screenshot 2026-04-06 235517.png>) ![alt text](<Screenshot 2026-04-06 235445.png>) ![alt text](<Screenshot 2026-04-06 235304.png>)
+![alt text](<Screenshot 2026-04-06 235445.png>) ![alt text](<Screenshot 2026-04-06 235304.png>) ![alt text](<Screenshot 2026-04-06 235517.png>) 
 
 
 ---
