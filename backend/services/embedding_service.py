@@ -1,11 +1,20 @@
-from sentence_transformers import SentenceTransformer
+import os
 
-model = SentenceTransformer("all-MiniLM-L6-v2")
+model = None  
 
-def generate_embedding(text:str):
-    if not text or not text.strip():
+def get_model():
+    global model
+    if model is None:
+        print("Loading embedding model")
+        from sentence_transformers import SentenceTransformer
+        model = SentenceTransformer("all-MiniLM-L6-v2")
+    return model
+
+
+def generate_embedding(text):
+    if os.getenv("RENDER") == "true":
+        print("Using dummy embedding(cloud mode)")
         return [0.0] * 384
-    
-    embedding = model.encode(text)
 
-    return embedding.tolist()
+    model = get_model()
+    return model.encode(text).tolist()
