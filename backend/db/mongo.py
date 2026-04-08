@@ -1,11 +1,20 @@
 from pymongo import MongoClient
 
-#Create connection
-client = MongoClient("mongodb://localhost:27017/")
+from pymongo import MongoClient
 
-#Database
-db= client["invoice_ai_app"]
+MONGO_URI = os.getenv("MONGO_URI")
 
-#Collection
+client = MongoClient(MONGO_URI)
 
-invoice_collection = db["invoices"]
+db = client["invoice_db"]
+collection = db["invoices"]
+
+# #Create connection
+# client = MongoClient("mongodb://localhost:27017/")
+
+# #Database
+# db= client["invoice_ai_app"]
+
+# #Collection
+
+# invoice_collection = db["invoices"]
