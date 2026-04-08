@@ -11,7 +11,8 @@ type InvoiceHistoryItem = {
   };
 };
 
-const API_URL = "http://127.0.0.1:8000/invoices";
+// const API_URL = "http://:8000/invoices";
+const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/invoices`;
 
 function formatDate(value?: string) {
   if (!value) {
