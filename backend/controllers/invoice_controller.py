@@ -110,15 +110,23 @@ async def process_invoice(file: UploadFile = File(...)):
         if os.path.exists(temp_file_path):
             os.remove(temp_file_path)
  except Exception as e:
-    print("Error Occurred")
-    traceback.print_exc()            
+    import traceback
+    print("ERROR OCCURRED:")
+    traceback.print_exc()
+
+    return {
+        "text_preview": "",
+        "agent_results": [],
+        "final_decision": {
+            "decision": "HOLD",
+            "issues": [{"reason": str(e)}]
+        },
+        "similar_invoices": []
+    }           
 
 
 @router.get("/invoices")
 def fetch_invoices():
     return get_all_invoices()
 
-@router.get("/test")
-def test():
-    print("✅ TEST ENDPOINT HIT")
-    return {"message": "test working"}
+
