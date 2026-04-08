@@ -42,87 +42,97 @@ def deduplicate_similar_results(results):
 
 @router.post("/process-invoice")
 async def process_invoice(file: UploadFile = File(...)):
- try:
-     print("Recieved file:", file.filename)   
-     if file.content_type != "application/pdf" or not file.filename.endswith(".pdf"):
-        return {"error": "Only PDF files are allowed"}
+    try:
+        print("Received file:", file.filename)
 
-     contents = await file.read()
+        if file.content_type != "application/pdf" or not file.filename.endswith(".pdf"):
+            return {"error": "Only PDF files are allowed"}
 
-     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
-        temp_file.write(contents)
-        temp_file_path = temp_file.name
+        contents = await file.read()
 
-     try:
-        print("Extracting text")
-        text = extract_text(temp_file_path)
-        print("Extracted text length:", len(text))
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
+            temp_file.write(contents)
+            temp_file_path = temp_file.name
 
-        print("Running agents")
-        results = await asyncio.gather(
-            invoice_agent(text),
-            po_agent(text),
-            fraud_agent(text)
-        )
+        try:
+            print("Extracting text")
+            text = extract_text(temp_file_path)
+            print("Extracted text length:", len(text))
 
-        decision = {
-            "decision": "HOLD" if any(r["status"] == "fail" for r in results) else "APPROVE",
-            "issues": [r for r in results if r["status"] == "fail"]
-        }
-
-        embedding = generate_embedding(text)
-        similar_results = search_similar_data(embedding)
-        similar_results = deduplicate_similar_results(similar_results)
-
-        is_exact_duplicate = any(r.score >= DUPLICATE_SCORE_THRESHOLD for r in similar_results)
-
-        if not is_exact_duplicate:
-            store_embedding_data(
-                embedding,
-                payload={
-                    "text_preview": text[:200],
-                    "decision": decision["decision"]
-                }
+            print("Running agents")
+            results = await asyncio.gather(
+                invoice_agent(text),
+                po_agent(text),
+                fraud_agent(text),
+                return_exceptions=True  
             )
 
-        invoice_data = {
-            "text": text,
-            "agent_results": results,
-            "final_decision": decision
-        }
 
-        save_invoice(invoice_data)
+            processed_results = []
+            for r in results:
+                if isinstance(r, Exception):
+                    print("Agent error:", str(r))
+                    processed_results.append({
+                        "agent": "unknown",
+                        "status": "fail",
+                        "reason": str(r)
+                    })
+                else:
+                    processed_results.append(r)
+
+            results = processed_results
+
+            decision = {
+                "decision": "HOLD" if any(r["status"] == "fail" for r in results) else "APPROVE",
+                "issues": [r for r in results if r["status"] == "fail"]
+            }
+
+            try:
+                embedding = generate_embedding(text)
+                similar_results = search_similar_data(embedding)
+                similar_results = deduplicate_similar_results(similar_results)
+            except Exception as e:
+                print("Similarity failed:", str(e))
+                similar_results = []
+
+            invoice_data = {
+                "text": text,
+                "agent_results": results,
+                "final_decision": decision
+            }
+
+            save_invoice(invoice_data)
+
+            return {
+                "text_preview": text[:200] if text else "",
+                "agent_results": results,
+                "final_decision": decision,
+                "similar_invoices": [
+                    {
+                        "score": getattr(r, "score", 0),
+                        "payload": getattr(r, "payload", {})
+                    }
+                    for r in similar_results
+                ]
+            }
+
+        finally:
+            if os.path.exists(temp_file_path):
+                os.remove(temp_file_path)
+
+    except Exception as e:
+        print("ERROR OCCURRED:")
+        traceback.print_exc()
 
         return {
-            "text_preview": text[:200],
-            "agent_results": results,
-            "final_decision": decision,
-            "similar_invoices": [
-                {
-                    "score": r.score,
-                    "payload": r.payload
-                }
-                for r in similar_results
-            ]
-        }
-
-     finally:
-        if os.path.exists(temp_file_path):
-            os.remove(temp_file_path)
- except Exception as e:
-    import traceback
-    print("ERROR OCCURRED:")
-    traceback.print_exc()
-
-    return {
-        "text_preview": "",
-        "agent_results": [],
-        "final_decision": {
-            "decision": "HOLD",
-            "issues": [{"reason": str(e)}]
-        },
-        "similar_invoices": []
-    }           
+            "text_preview": "",
+            "agent_results": [],
+            "final_decision": {
+                "decision": "HOLD",
+                "issues": [{"reason": str(e)}]
+            },
+            "similar_invoices": []
+        }       
 
 
 @router.get("/invoices")
