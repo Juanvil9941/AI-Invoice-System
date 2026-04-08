@@ -3,7 +3,11 @@ import os
 
 MONGO_URI = os.getenv("MONGO_URI")
 
-client = MongoClient(MONGO_URI)
+client = MongoClient(
+    MONGO_URI,
+    tls=True,
+    tlsAllowInvalidCertificates=True  
+)
 
 db = client["invoice_db"]
 invoice_collection = db["invoices"]

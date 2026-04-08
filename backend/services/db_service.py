@@ -21,6 +21,7 @@ def save_invoice(data):
     data["created_at"] = datetime.utcnow()
     result = invoice_collection.insert_one(data)
     print("Inserted ID:", result.inserted_id)
+    print("Saved to DB")
     return str(result.inserted_id)
 
 
