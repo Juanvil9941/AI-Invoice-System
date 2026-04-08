@@ -1,6 +1,7 @@
 import { ProcessInvoiceResponse } from "@/types/invoice";
 
-const API_BASE_URL = "http://127.0.0.1:8000";
+// const API_BASE_URL = "http://127.0.0.1:8000";
+const  API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export async function processInvoice(file: File): Promise<ProcessInvoiceResponse> {
   const formData = new FormData();
