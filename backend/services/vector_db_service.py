@@ -18,21 +18,19 @@ COLLECTION_NAME = "invoices"
 def init_collection(vector_size: int):
     print("Connecting to Qdrant")
     print("Using REST mode for Qdrant")
-    try:
-        collections = client.get_collections().collections
-        names = [c.name for c in collections]
-        print("Qdrant connected")
 
-        if COLLECTION_NAME not in names:
-             client.create_collection(
-                collection_name=COLLECTION_NAME,
-                 vectors_config=VectorParams(
-                    size=vector_size,
-                    distance=Distance.COSINE
+    try:
+        client.create_collection(
+            collection_name=COLLECTION_NAME,
+            vectors_config=VectorParams(
+                size=vector_size,
+                distance=Distance.COSINE
             )
         )
+        print("Collection created")
+
     except Exception as e:
-       print("Qdrant connection failed:", str(e))         
+        print("Collection already exist or error:", str(e))         
 
 
 def store_embedding_data(embedding, payload):
