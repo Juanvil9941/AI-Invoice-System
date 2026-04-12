@@ -7,6 +7,10 @@ import os
 client = QdrantClient(
     url = os.getenv("QDRANT_URL"),
     api_key= os.getenv("QDRANT_API_KEYS")
+    print("QDRANT URL:", os.getenv("QDRANT_URL"))
+    print("KEY LENGTH:", len(os.getenv("QDRANT_API_KEY") or ""))
+    timeout= 10,
+    check_compatibility=False 
 )
 
 COLLECTION_NAME = "invoices"
