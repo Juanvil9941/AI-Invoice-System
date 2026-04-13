@@ -8,7 +8,7 @@ Pillow
 
 sentence-transformers
 
-qdrant-client
+chromadb
 
 pymongo
 
