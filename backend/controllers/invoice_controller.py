@@ -21,25 +21,6 @@ from utils.pdf_extractor import extract_text
 
 router = APIRouter()
 
-DUPLICATE_SCORE_THRESHOLD = 0.999
-
-
-def deduplicate_similar_results(results):
-    unique_results = []
-    seen_keys = set()
-
-    for result in results:
-        payload = result.payload or {}
-        key = payload.get("text_preview", "")
-
-        if key in seen_keys:
-            continue
-
-        seen_keys.add(key)
-        unique_results.append(result)
-
-    return unique_results
-
 
 @router.post("/process-invoice")
 async def process_invoice(file: UploadFile = File(...)):
@@ -60,17 +41,19 @@ async def process_invoice(file: UploadFile = File(...)):
             text = extract_text(temp_file_path)
             print("Extracted text length:", len(text))
 
+        
             extracted_data = await extraction_agent(text)
-             
+
+          
             print("Running agents")
             results = await asyncio.gather(
                 invoice_agent(extracted_data),
                 po_agent(extracted_data),
                 fraud_agent(extracted_data),
-                return_exceptions=True  
+                return_exceptions=True
             )
 
-
+            
             processed_results = []
             for r in results:
                 if isinstance(r, Exception):
@@ -85,38 +68,54 @@ async def process_invoice(file: UploadFile = File(...)):
 
             results = processed_results
 
+            
             decision = {
                 "decision": "HOLD" if any(r["status"] == "fail" for r in results) else "APPROVE",
                 "issues": [r for r in results if r["status"] == "fail"]
             }
 
+            
             try:
                 embedding = generate_embedding(text)
-                similar_results = search_similar_data(embedding)
-                similar_results = deduplicate_similar_results(similar_results)
+
+                similar = search_similar_data(embedding)
+
+                if not similar:
+                    similar = {"documents": [[]]}
+
+                similar_texts = similar.get("documents", [[]])[0]
+
+                is_duplicate = False
+                for s in similar_texts:
+                    if text[:100] in s:
+                        is_duplicate =  True
+                        break
+
             except Exception as e:
                 print("Similarity failed:", str(e))
-                similar_results = []
+                similar_texts = []
+                is_duplicate = False
 
+           
             invoice_data = {
                 "text": text,
+                "extracted_data": extracted_data,
                 "agent_results": results,
                 "final_decision": decision
             }
 
             save_invoice(invoice_data)
 
+           
             return {
-                "text_preview": text[:200] if text else "",
-                "agent_results": results,
-                "final_decision": decision,
-                "similar_invoices": [
-                    {
-                        "score": getattr(r, "score", 0),
-                        "payload": getattr(r, "payload", {})
-                    }
-                    for r in similar_results
-                ]
+             "summary": {
+               "decision": decision["decision"],
+               "duplicate_detected": is_duplicate
+     },
+       "text_preview": text[:150] if text else "",
+       "invoice": extracted_data,
+       "validation": results,
+        "similar_invoices": similar_texts
             }
 
         finally:
@@ -128,18 +127,16 @@ async def process_invoice(file: UploadFile = File(...)):
         traceback.print_exc()
 
         return {
-            "text_preview": "",
-            "agent_results": [],
-            "final_decision": {
-                "decision": "HOLD",
-                "issues": [{"reason": str(e)}]
-            },
-            "similar_invoices": []
-        }       
+        "summary": {
+        "decision": decision["decision"],
+        "issues_count": len(decision["issues"])
+        },
+        "invoice": extracted_data,
+        "validation": results,
+        "similar_invoices": similar_texts
+    }
 
 
 @router.get("/invoices")
 def fetch_invoices():
     return get_all_invoices()
-
-

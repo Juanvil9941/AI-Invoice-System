@@ -1,16 +1,16 @@
-import re
 from services.llm_service import ask_llm_async
 from utils.response_parser import parse_llm_response
 
 async def invoice_agent(data):
 
-    if not re.search(r"Invoice Number", data):
+    invoice_number = data.get("invoice_number")
+
+    if not invoice_number:
         return {
             "agent": "invoice",
             "status": "fail",
             "reason": "Missing invoice number"
         }
-
 
     prompt = f"""
     Validate invoice format.
@@ -21,7 +21,7 @@ async def invoice_agent(data):
     - Format:
     {{ "status": "pass or fail", "reason": "..." }}
 
-    Invoice:
+    Invoice Data:
     {data}
     """
 

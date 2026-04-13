@@ -4,37 +4,30 @@ from utils.response_parser import parse_llm_response
 
 async def fraud_agent(data):
 
-    
-    amount_match = re.search(r"Amount:\s*(\d+)", data)
+    amount = data.get("amount")
+    vendor = data.get("vendor")
+    invoice_number = data.get("invoice_number")
 
-    if amount_match:
-        amount = int(amount_match.group(1))
+    issues = []
 
-        if amount > 100000:
-            return {
-                "agent": "fraud",
-                "status": "fail",
-                "reason": "Amount exceeds threshold"
-            }
+    if not invoice_number:
+        issues.append("Missing invoice number")
 
-    
-    prompt = f"""
-    Check if invoice looks suspicious.
+    if amount and amount > 100000:
+        issues.append("Amount too high")
 
-    STRICT RULES:
-    - Respond ONLY in JSON
-    - No explanation
-    - Format:
-    {{ "status": "pass or fail", "reason": "..." }}
+    if vendor and len(vendor) < 3:
+        issues.append("Vendor suspicious")
 
-    Invoice:
-    {data}
-    """
-
-    response = await ask_llm_async(prompt)
-    result = parse_llm_response(response)
+    if issues:
+        return {
+            "agent": "fraud",
+            "status": "fail",
+            "reason": ", ".join(issues)
+        }
 
     return {
         "agent": "fraud",
-        **result
+        "status": "pass",
+        "reason": ""
     }

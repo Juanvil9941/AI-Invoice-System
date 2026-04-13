@@ -5,16 +5,16 @@ import re
 
 async def po_agent(data):
 
-    match = re.search(r"PO\d+", data)
+   po_number = data.get("po_number")
 
-    if match:
+   if po_number:
         return {
             "agent": "po",
             "status": "pass",
             "reason": ""
         }
 
-    return {
+   return {
         "agent": "po",
         "status": "fail",
         "reason": "Purchase Order not found"
