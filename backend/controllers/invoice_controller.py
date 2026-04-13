@@ -1,6 +1,6 @@
 from fastapi import APIRouter, UploadFile, File
 from services.embedding_service import generate_embedding
-from services.vector_db_service import store_embedding_data, search_similar_data
+from services.chroma_service import store_embedding_data, search_similar_data
 from agents.extraction_agent import extraction_agent
 
 import asyncio
