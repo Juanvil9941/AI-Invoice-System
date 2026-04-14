@@ -39,12 +39,9 @@ async def process_invoice(file: UploadFile = File(...)):
         try:
             print("Extracting text")
             text = extract_text(temp_file_path)
-            print("Extracted text length:", len(text))
 
-        
             extracted_data = await extraction_agent(text)
 
-          
             print("Running agents")
             results = await asyncio.gather(
                 invoice_agent(extracted_data),
@@ -53,7 +50,6 @@ async def process_invoice(file: UploadFile = File(...)):
                 return_exceptions=True
             )
 
-            
             processed_results = []
             for r in results:
                 if isinstance(r, Exception):
@@ -68,37 +64,31 @@ async def process_invoice(file: UploadFile = File(...)):
 
             results = processed_results
 
-            
             decision = {
                 "decision": "HOLD" if any(r["status"] == "fail" for r in results) else "APPROVE",
                 "issues": [r for r in results if r["status"] == "fail"]
             }
-
-            
             try:
                 embedding = generate_embedding(text)
-
                 similar = search_similar_data(embedding)
 
-                if not similar:
-                    similar = {"documents": [[]]}
+                if isinstance(similar, dict):
+                    similar_texts = similar.get("documents", [[]])[0]
+                elif isinstance(similar, list):
+                    similar_texts = similar
+                else:
+                    similar_texts = []
 
-                similar_texts = similar.get("documents", [[]])[0]
-
-                is_duplicate = False
-                for s in similar_texts:
-                    if text[:100] in s:
-                        is_duplicate =  True
-                        break
+                is_duplicate = any(text[:100] in s for s in similar_texts)
 
             except Exception as e:
                 print("Similarity failed:", str(e))
                 similar_texts = []
                 is_duplicate = False
 
-           
             invoice_data = {
                 "text": text,
+                "text_preview": text[:200], 
                 "extracted_data": extracted_data,
                 "agent_results": results,
                 "final_decision": decision
@@ -106,16 +96,15 @@ async def process_invoice(file: UploadFile = File(...)):
 
             save_invoice(invoice_data)
 
-           
             return {
-             "summary": {
-               "decision": decision["decision"],
-               "duplicate_detected": is_duplicate
-     },
-       "text_preview": text[:150] if text else "",
-       "invoice": extracted_data,
-       "validation": results,
-        "similar_invoices": similar_texts
+                "summary": {
+                    "decision": decision["decision"],
+                    "duplicate_detected": is_duplicate
+                },
+                "text_preview": text[:150] if text else "",
+                "invoice": extracted_data,
+                "validation": results,
+                "similar_invoices": similar_texts
             }
 
         finally:
@@ -127,14 +116,15 @@ async def process_invoice(file: UploadFile = File(...)):
         traceback.print_exc()
 
         return {
-        "summary": {
-        "decision": decision["decision"],
-        "issues_count": len(decision["issues"])
-        },
-        "invoice": extracted_data,
-        "validation": results,
-        "similar_invoices": similar_texts
-    }
+            "summary": {
+                "decision": "HOLD",
+                "duplicate_detected": False
+            },
+            "text_preview": "",
+            "invoice": {},
+            "validation": [],
+            "similar_invoices": []
+        }
 
 
 @router.get("/invoices")
